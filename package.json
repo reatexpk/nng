@@ -5,6 +5,9 @@
   "repository": "git@github.com:reatexpk/nng.git",
   "author": "Лебедев Дмитрий Сергеевич <dslebedev@alfabank.ru>",
   "license": "MIT",
+  "scripts": {
+    "start": "nodemon src/index.ts localhost 4000"
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",

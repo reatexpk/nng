@@ -60,6 +60,11 @@ function handler(ctx: Context) {
       }
       ctx.reply(SUCCESS);
     } else {
+      console.log(
+        `Got INVALID message from ${
+          ctx.from ? getFullName(ctx.from) : "unknown user"
+        }:\n${ctx.message.text}`
+      );
       ctx.reply(INVALID_MESSAGE);
     }
   } catch (e) {

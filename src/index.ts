@@ -5,7 +5,7 @@ import ws from "ws";
 import low from "lowdb";
 import FileSync from "lowdb/adapters/FileSync";
 
-import { validateMessage } from "./validateMessage";
+import { validateMessage, getFullName } from "./helpers";
 import {
   INVALID_MESSAGE,
   START_MESSAGE,
@@ -13,7 +13,6 @@ import {
   UNEXPECTED_ERROR,
 } from "./constants";
 import { Schema } from "./typings";
-import { getFullName } from "./helpers";
 
 dotenv.config();
 const database = initDatabase();

@@ -19,7 +19,9 @@
     ]
   },
   "devDependencies": {
+    "@types/lowdb": "^1.0.9",
     "@types/node": "^14.6.4",
+    "@types/ws": "^7.2.6",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "eslint": "^7.8.1",
@@ -36,6 +38,8 @@
   },
   "dependencies": {
     "dotenv": "^8.2.0",
-    "telegraf": "^3.38.0"
+    "lowdb": "^1.0.0",
+    "telegraf": "^3.38.0",
+    "ws": "^7.3.1"
   }
 }

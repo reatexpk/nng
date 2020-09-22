@@ -16,6 +16,7 @@
   ],
   "rules": {
     "import/prefer-default-export": "off",
+    "no-use-before-define": "off",
     "import/extensions": "off",
     "prettier/prettier": [
       "error",

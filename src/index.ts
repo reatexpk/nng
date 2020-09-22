@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 import { Telegraf, Context } from "telegraf";
 import dotenv from "dotenv";
 import ws from "ws";
@@ -10,6 +10,7 @@ import { validateMessage, getFullName, getTimeToWaitMessage } from "./helpers";
 import {
   DELAY,
   INVALID_MESSAGE,
+  LIMIT,
   START_MESSAGE,
   SUCCESS,
   UNEXPECTED_ERROR,
@@ -55,8 +56,14 @@ async function handler(ctx: Context) {
       }
       // console.log(`Got message from ${from}:\n${text}`);
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (database.get("posts") as any)
+        const posts: Post[] = database.get("posts").value();
+        if (posts.length >= LIMIT) {
+          database.get("posts").shift().write();
+          database.update("count", (count) => count - 1).write();
+        }
+
+        database
+          .get("posts")
           .push({
             text,
             from,
@@ -85,8 +92,7 @@ async function handler(ctx: Context) {
 
 async function checkDelay(userId: number) {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const posts: Post[] = await (database as any).get("posts").value();
+    const posts: Post[] = database.get("posts").value();
     const postsByUser = posts.filter((post) => post.userId === userId);
     if (!postsByUser.length) return 0;
     const currentTime = +new Date();

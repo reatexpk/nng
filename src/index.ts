@@ -1,18 +1,20 @@
-/* eslint-disable no-console, no-use-before-define */
+/* eslint-disable no-console */
 import { Telegraf, Context } from "telegraf";
 import dotenv from "dotenv";
 import ws from "ws";
 import low from "lowdb";
 import FileSync from "lowdb/adapters/FileSync";
+import path from "path";
 
-import { validateMessage, getFullName } from "./helpers";
+import { validateMessage, getFullName, getTimeToWaitMessage } from "./helpers";
 import {
+  DELAY,
   INVALID_MESSAGE,
   START_MESSAGE,
   SUCCESS,
   UNEXPECTED_ERROR,
 } from "./constants";
-import { Schema } from "./typings";
+import { Post, Schema } from "./typings";
 
 dotenv.config();
 const database = initDatabase();
@@ -32,9 +34,16 @@ bot
     console.error(`Failed to start bot instance: ${e}`);
   });
 
-function handler(ctx: Context) {
+async function handler(ctx: Context) {
   try {
-    if (!ctx.message) return;
+    if (!ctx.message || !ctx.message.from?.id) return;
+
+    const timeToWait = await checkDelay(ctx.message.from.id);
+    if (timeToWait === null) throw new Error("Unable to check delay");
+    if (timeToWait > 0) {
+      await ctx.reply(getTimeToWaitMessage(timeToWait));
+      return;
+    }
 
     const valid = validateMessage(ctx.message);
 
@@ -44,13 +53,14 @@ function handler(ctx: Context) {
       if (ctx.from) {
         from = getFullName(ctx.from);
       }
-      console.log(`Got message from ${from}:\n${text}`);
+      // console.log(`Got message from ${from}:\n${text}`);
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (database.get("posts") as any)
+        await (database.get("posts") as any)
           .push({
             text,
             from,
+            userId: ctx.message.from?.id || 0,
             timestamp: +new Date(),
           })
           .write();
@@ -58,17 +68,40 @@ function handler(ctx: Context) {
       } catch (e) {
         console.error(`Database update failed: ${e}`);
       }
-      ctx.reply(SUCCESS);
+      await ctx.reply(SUCCESS);
     } else {
-      console.log(
-        `Got INVALID message from ${
-          ctx.from ? getFullName(ctx.from) : "unknown user"
-        }:\n${ctx.message.text}`
-      );
-      ctx.reply(INVALID_MESSAGE);
+      // console.log(
+      //   `Got INVALID message from ${
+      //     ctx.from ? getFullName(ctx.from) : "unknown user"
+      //   }:\n${ctx.message.text}`
+      // );
+      await ctx.reply(INVALID_MESSAGE);
     }
   } catch (e) {
-    ctx.reply(UNEXPECTED_ERROR);
+    console.log(e);
+    await ctx.reply(UNEXPECTED_ERROR);
+  }
+}
+
+async function checkDelay(userId: number) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const posts: Post[] = await (database as any).get("posts").value();
+    const postsByUser = posts.filter((post) => post.userId === userId);
+    if (!postsByUser.length) return 0;
+    const currentTime = +new Date();
+    const lastPostWithinAMinute = postsByUser
+      .reverse()
+      .find(({ timestamp }) => currentTime - timestamp <= 60000);
+    if (lastPostWithinAMinute) {
+      return (
+        DELAY -
+        Math.ceil((currentTime - lastPostWithinAMinute.timestamp) / 1000)
+      );
+    }
+    return 0;
+  } catch (e) {
+    return null;
   }
 }
 
@@ -95,13 +128,13 @@ function initBot() {
     ctx.reply(message);
   });
 
-  botInstance.command("drop", (ctx) => {
+  botInstance.command("drop", async (ctx) => {
     const adminList = process.env.admins;
     const username = ctx.message?.from?.username;
     if (!username) return;
     if (adminList?.includes(username)) {
-      database.setState({ posts: [], count: 0 });
-      ctx.reply("Посты очищены");
+      await database.setState({ posts: [], count: 0 }).write();
+      await ctx.reply("Посты очищены");
     }
   });
 
@@ -120,7 +153,8 @@ function initBot() {
 
 function initDatabase() {
   try {
-    const adapter = new FileSync<Schema>("database.json");
+    const location = path.resolve(__dirname, "../database.json");
+    const adapter = new FileSync<Schema>(location);
     const databaseInstance = low(adapter);
     databaseInstance.defaults({ posts: [], count: 0 }).write();
     return databaseInstance;

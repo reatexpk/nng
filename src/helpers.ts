@@ -37,3 +37,10 @@ function decline(value: number, titles: [string, string, string]) {
       : cases[target % 10 < 5 ? target % 10 : 5];
   return titles[caseIndex];
 }
+
+export function isAdmin(ctx: Context): boolean {
+  const adminList = process.env.admins;
+  const username = ctx.message?.from?.username;
+  if (!username || !adminList) return false;
+  return adminList?.includes(username);
+}

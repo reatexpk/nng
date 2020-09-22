@@ -6,7 +6,12 @@ import low from "lowdb";
 import FileSync from "lowdb/adapters/FileSync";
 import path from "path";
 
-import { validateMessage, getFullName, getTimeToWaitMessage } from "./helpers";
+import {
+  validateMessage,
+  getFullName,
+  getTimeToWaitMessage,
+  isAdmin,
+} from "./helpers";
 import {
   DELAY,
   INVALID_MESSAGE,
@@ -121,36 +126,33 @@ function initBot() {
   const botInstance = new Telegraf(TOKEN);
   botInstance.start((ctx) => ctx.reply(START_MESSAGE));
 
-  botInstance.command("get", () => {
-    const { posts } = database.getState();
-    console.log(posts);
-  });
-
   botInstance.command("stats", (ctx) => {
     const { posts, count } = database.getState();
     const posters = [...new Set(posts.map(({ from }) => from))].length;
     const message = `Отправлено сообщений: ${count}\nПостеров: ${posters}`;
-    console.log(message);
+    // console.log(message);
     ctx.reply(message);
   });
 
   botInstance.command("drop", async (ctx) => {
-    const adminList = process.env.admins;
-    const username = ctx.message?.from?.username;
-    if (!username) return;
-    if (adminList?.includes(username)) {
+    if (isAdmin(ctx)) {
       await database.setState({ posts: [], count: 0 }).write();
       await ctx.reply("Посты очищены");
     }
   });
 
-  botInstance.command("dropLast", (ctx) => {
-    const adminList = process.env.admins;
-    const username = ctx.message?.from?.username;
-    if (!username) return;
-    if (adminList?.includes(username)) {
-      database.setState({ posts: [], count: 0 });
-      ctx.reply("Последний пост удален");
+  botInstance.command("kill", (ctx) => {
+    if (!ctx.message?.text) return;
+    if (isAdmin(ctx)) {
+      const username = ctx.message.text.split(" ")[1];
+      console.log(username);
+      database
+        .get("posts")
+        .remove((post) => post.from.includes(username))
+        .value();
+      const newLength = database.get("posts").value().length;
+      database.set("count", newLength).write();
+      ctx.reply(`Все посты пользователя ${username} удалены`);
     }
   });
 

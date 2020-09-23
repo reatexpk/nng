@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 export const DELAY = 60;
 export const LIMIT = 60;
-export const MARQUEE_SPEED = 200;
+export const MARQUEE_SPEED = 100;
 export const SPACES_COUNT = 50;
 export const SUCCESS = "Сообщение отправлено";
 export const INVALID_MESSAGE =

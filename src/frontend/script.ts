@@ -3,24 +3,31 @@
 import { Marquee } from "dynamic-marquee";
 import { MARQUEE_SPEED, SPACES_COUNT } from "../constants";
 
-const messages: string[] = ["Тест 1", "Тест 2", "Тест 3"];
+let messages: string[] = [];
 
 const marqueeDomNode = document.getElementById("marquee");
 const marquee = new Marquee(marqueeDomNode, {
   rate: -MARQUEE_SPEED,
 });
 
-marquee.appendItem(createItem("initial message"));
-
 marquee.onAllItemsRemoved(() => {
   marquee.appendItem(createContent(messages));
 });
 
-function createItem(text: string) {
-  const newMessage = document.createElement("span");
-  newMessage.textContent = text;
-  return newMessage;
-}
+const ws = new WebSocket("ws://127.0.0.1:9999");
+
+ws.onopen = () => {
+  ws.send("get");
+};
+
+ws.onmessage = (event: MessageEvent<string>) => {
+  const posts = JSON.parse(event.data);
+  const firstInit = messages.length === 0;
+  messages = posts;
+  if (firstInit && marquee.getNumItems() === 0) {
+    marquee.appendItem(createContent(messages));
+  }
+};
 
 function createContent(currentMessages: string[]) {
   const container = document.createElement("span");

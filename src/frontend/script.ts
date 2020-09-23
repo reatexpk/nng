@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { Marquee } from "dynamic-marquee";
-import { MARQUEE_SPEED, SPACES_COUNT } from "../constants";
+import { MARQUEE_SPEED, SPACES_COUNT, WS_PORT } from "../constants";
 
 let messages: string[] = [];
 
@@ -14,7 +14,7 @@ marquee.onAllItemsRemoved(() => {
   marquee.appendItem(createContent(messages));
 });
 
-const ws = new WebSocket("ws://127.0.0.1:9999");
+const ws = new WebSocket(`ws://127.0.0.1:${WS_PORT}`);
 
 ws.onopen = () => {
   ws.send("get");

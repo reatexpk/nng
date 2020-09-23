@@ -3,3 +3,6 @@ node_modules
 dump.rdb
 database.json
 .idea
+dist
+.cache
+yarn-error.log

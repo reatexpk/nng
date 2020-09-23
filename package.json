@@ -46,7 +46,6 @@
     "dynamic-marquee": "^1.2.2",
     "express": "^4.17.1",
     "lowdb": "^1.0.0",
-    "remove": "^0.1.5",
     "telegraf": "^3.38.0",
     "ws": "^7.3.1"
   }

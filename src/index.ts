@@ -19,6 +19,7 @@ import {
   START_MESSAGE,
   SUCCESS,
   UNEXPECTED_ERROR,
+  WS_PORT,
 } from "./constants";
 import { Post, Schema } from "./typings";
 
@@ -26,7 +27,7 @@ dotenv.config();
 const database = initDatabase();
 const bot = initBot();
 const server = new ws.Server({
-  port: 9999,
+  port: WS_PORT,
 });
 let currentSocket: ws;
 

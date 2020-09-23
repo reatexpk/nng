@@ -26,8 +26,9 @@ dotenv.config();
 const database = initDatabase();
 const bot = initBot();
 const server = new ws.Server({
-  port: 3002,
+  port: 9999,
 });
+let currentSocket: ws;
 
 bot.on("message", handler);
 
@@ -77,6 +78,10 @@ async function handler(ctx: Context) {
           })
           .write();
         database.update("count", (count) => count + 1).write();
+
+        currentSocket.send(
+          preparePostsBeforeSend(database.get("posts").value())
+        );
       } catch (e) {
         console.error(`Database update failed: ${e}`);
       }
@@ -136,8 +141,9 @@ function initBot() {
 
   botInstance.command("drop", async (ctx) => {
     if (isAdmin(ctx)) {
-      await database.setState({ posts: [], count: 0 }).write();
-      await ctx.reply("Посты очищены");
+      database.setState({ posts: [], count: 0 }).write();
+      currentSocket.send(JSON.stringify([]));
+      ctx.reply("Посты очищены");
     }
   });
 
@@ -145,13 +151,13 @@ function initBot() {
     if (!ctx.message?.text) return;
     if (isAdmin(ctx)) {
       const username = ctx.message.text.split(" ")[1];
-      console.log(username);
       database
         .get("posts")
         .remove((post) => post.from.includes(username))
         .value();
-      const newLength = database.get("posts").value().length;
-      database.set("count", newLength).write();
+      const newPosts = database.get("posts").value();
+      currentSocket.send(preparePostsBeforeSend(newPosts));
+      database.set("count", newPosts.length).write();
       ctx.reply(`Все посты пользователя ${username} удалены`);
     }
   });
@@ -173,7 +179,19 @@ function initDatabase() {
 }
 
 server.on("connection", (socket) => {
+  currentSocket = socket;
+
   socket.on("message", (data) => {
-    console.log(data);
+    if (data === "get") {
+      const posts = database
+        .get("posts")
+        .value()
+        .map(({ text }) => text);
+      socket.send(JSON.stringify(posts));
+    }
   });
 });
+
+function preparePostsBeforeSend(posts: Post[]) {
+  return JSON.stringify(posts.map((post) => post.text));
+}

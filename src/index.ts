@@ -47,7 +47,8 @@ async function handler(ctx: Context) {
     if (!ctx.message || !ctx.message.from?.id) return;
 
     const bannedUsers = database.get("bannedUsers").value();
-    if (bannedUsers.includes(ctx.message.from.username || "")) {
+    const username = ctx.message.from?.username;
+    if (username && bannedUsers.includes(`@${username}`)) {
       ctx.reply("Ты был забанен :(");
       return;
     }

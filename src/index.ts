@@ -183,8 +183,7 @@ function initBot() {
         currentSocket.send(preparePostsBeforeSend(newPosts));
       }
       database.set("count", newPosts.length).write();
-      const bannedUsers = database.get("bannedUsers").value();
-      database.set("bannedUsers", [...bannedUsers, username]);
+      database.get("bannedUsers").push(username).write();
       ctx.reply(`Пользователь ${username} забанен`);
     }
   });

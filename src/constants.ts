@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 export const DELAY = 60;
-export const LIMIT = 60;
-export const MARQUEE_SPEED = 100;
+export const LIMIT = 15;
+export const MARQUEE_SPEED = 130;
 export const SPACES_COUNT = 50;
 export const WS_PORT = 3001;
 export const SUCCESS = "Сообщение отправлено";

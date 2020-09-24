@@ -22,6 +22,7 @@ ws.onopen = () => {
 
 ws.onmessage = (event: MessageEvent<string>) => {
   const posts = JSON.parse(event.data);
+  console.log("got posts", posts);
   const firstInit = messages.length === 0;
   messages = posts;
   if (firstInit && marquee.getNumItems() === 0) {

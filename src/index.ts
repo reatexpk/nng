@@ -80,6 +80,7 @@ async function handler(ctx: Context) {
           .write();
         database.update("count", (count) => count + 1).write();
 
+        console.log(currentSocket);
         currentSocket.send(
           preparePostsBeforeSend(database.get("posts").value())
         );
@@ -182,6 +183,8 @@ function initDatabase() {
 
 server.on("connection", (socket) => {
   currentSocket = socket;
+  console.log(socket);
+  console.log(currentSocket);
 
   socket.on("message", (data) => {
     if (data === "get") {

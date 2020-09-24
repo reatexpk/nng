@@ -79,7 +79,7 @@ async function handler(ctx: Context) {
         database.update("count", (count) => count + 1).write();
 
         server.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
+          if (client.readyState === ws.OPEN) {
             client.send(preparePostsBeforeSend(database.get("posts").value()));
           }
         });
@@ -139,7 +139,7 @@ function initBot() {
     if (isAdmin(ctx)) {
       database.setState({ posts: [], count: 0 }).write();
       server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
+        if (client.readyState === ws.OPEN) {
           client.send(JSON.stringify([]));
         }
       });
@@ -157,7 +157,7 @@ function initBot() {
         .value();
       const newPosts = database.get("posts").value();
       server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
+        if (client.readyState === ws.OPEN) {
           client.send(preparePostsBeforeSend(newPosts));
         }
       });

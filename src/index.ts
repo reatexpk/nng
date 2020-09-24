@@ -61,7 +61,6 @@ async function handler(ctx: Context) {
       if (ctx.from) {
         from = getFullName(ctx.from);
       }
-      // console.log(`Got message from ${from}:\n${text}`);
       try {
         const posts: Post[] = database.get("posts").value();
         if (posts.length >= LIMIT) {
@@ -80,21 +79,17 @@ async function handler(ctx: Context) {
           .write();
         database.update("count", (count) => count + 1).write();
 
-        console.log(currentSocket);
-        if (!currentSocket) return;
-        currentSocket.send(
-          preparePostsBeforeSend(database.get("posts").value())
-        );
+        if (currentSocket) {
+          currentSocket.send(
+            preparePostsBeforeSend(database.get("posts").value())
+          );
+        }
+
+        await ctx.reply(SUCCESS);
       } catch (e) {
         console.error(`Database update failed: ${e}`);
       }
-      await ctx.reply(SUCCESS);
     } else {
-      // console.log(
-      //   `Got INVALID message from ${
-      //     ctx.from ? getFullName(ctx.from) : "unknown user"
-      //   }:\n${ctx.message.text}`
-      // );
       await ctx.reply(INVALID_MESSAGE);
     }
   } catch (e) {
@@ -139,7 +134,6 @@ function initBot() {
     const { posts, count } = database.getState();
     const posters = [...new Set(posts.map(({ from }) => from))].length;
     const message = `Отправлено сообщений: ${count}\nПостеров: ${posters}`;
-    // console.log(message);
     ctx.reply(message);
   });
 
@@ -188,8 +182,6 @@ function initDatabase() {
 
 server.on("connection", (socket) => {
   currentSocket = socket;
-  console.log(socket);
-  console.log(currentSocket);
 
   socket.on("message", (data) => {
     if (data === "get") {

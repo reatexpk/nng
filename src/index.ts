@@ -195,7 +195,7 @@ function initBot() {
       const username = ctx.message.text.split(" ")[1];
       database
         .get("bannedUsers")
-        .remove((user) => user)
+        .remove((user) => user === `@${username}`)
         .value();
       ctx.reply(`Пользователь ${username} разбанен`);
     }

@@ -81,6 +81,7 @@ async function handler(ctx: Context) {
         database.update("count", (count) => count + 1).write();
 
         console.log(currentSocket);
+        if (!currentSocket) return;
         currentSocket.send(
           preparePostsBeforeSend(database.get("posts").value())
         );

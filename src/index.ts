@@ -146,7 +146,9 @@ function initBot() {
   botInstance.command("drop", async (ctx) => {
     if (isAdmin(ctx)) {
       database.setState({ posts: [], count: 0 }).write();
-      currentSocket.send(JSON.stringify([]));
+      if (currentSocket) {
+        currentSocket.send(JSON.stringify([]));
+      }
       ctx.reply("Посты очищены");
     }
   });
@@ -160,7 +162,9 @@ function initBot() {
         .remove((post) => post.from.includes(username))
         .value();
       const newPosts = database.get("posts").value();
-      currentSocket.send(preparePostsBeforeSend(newPosts));
+      if (currentSocket) {
+        currentSocket.send(preparePostsBeforeSend(newPosts));
+      }
       database.set("count", newPosts.length).write();
       ctx.reply(`Все посты пользователя ${username} удалены`);
     }

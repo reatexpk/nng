@@ -14,7 +14,7 @@ marquee.onAllItemsRemoved(() => {
   marquee.appendItem(createContent(messages));
 });
 
-const ws = new WebSocket(`ws://127.0.0.1:${WS_PORT}`);
+const ws = new WebSocket(`ws://5.63.155.197:${WS_PORT}`);
 
 ws.onopen = () => {
   ws.send("get");

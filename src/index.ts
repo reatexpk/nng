@@ -61,7 +61,6 @@ async function handler(ctx: Context) {
       if (ctx.from) {
         from = getFullName(ctx.from);
       }
-      // console.log(`Got message from ${from}:\n${text}`);
       try {
         const posts: Post[] = database.get("posts").value();
         if (posts.length >= LIMIT) {
@@ -80,19 +79,17 @@ async function handler(ctx: Context) {
           .write();
         database.update("count", (count) => count + 1).write();
 
-        currentSocket.send(
-          preparePostsBeforeSend(database.get("posts").value())
-        );
+        if (currentSocket) {
+          currentSocket.send(
+            preparePostsBeforeSend(database.get("posts").value())
+          );
+        }
+
+        await ctx.reply(SUCCESS);
       } catch (e) {
         console.error(`Database update failed: ${e}`);
       }
-      await ctx.reply(SUCCESS);
     } else {
-      // console.log(
-      //   `Got INVALID message from ${
-      //     ctx.from ? getFullName(ctx.from) : "unknown user"
-      //   }:\n${ctx.message.text}`
-      // );
       await ctx.reply(INVALID_MESSAGE);
     }
   } catch (e) {
@@ -137,14 +134,15 @@ function initBot() {
     const { posts, count } = database.getState();
     const posters = [...new Set(posts.map(({ from }) => from))].length;
     const message = `Отправлено сообщений: ${count}\nПостеров: ${posters}`;
-    // console.log(message);
     ctx.reply(message);
   });
 
   botInstance.command("drop", async (ctx) => {
     if (isAdmin(ctx)) {
       database.setState({ posts: [], count: 0 }).write();
-      currentSocket.send(JSON.stringify([]));
+      if (currentSocket) {
+        currentSocket.send(JSON.stringify([]));
+      }
       ctx.reply("Посты очищены");
     }
   });
@@ -158,7 +156,9 @@ function initBot() {
         .remove((post) => post.from.includes(username))
         .value();
       const newPosts = database.get("posts").value();
-      currentSocket.send(preparePostsBeforeSend(newPosts));
+      if (currentSocket) {
+        currentSocket.send(preparePostsBeforeSend(newPosts));
+      }
       database.set("count", newPosts.length).write();
       ctx.reply(`Все посты пользователя ${username} удалены`);
     }

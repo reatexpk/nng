@@ -29,7 +29,6 @@ const bot = initBot();
 const server = new ws.Server({
   port: WS_PORT,
 });
-let currentSocket: ws;
 
 bot.on("message", handler);
 
@@ -79,12 +78,11 @@ async function handler(ctx: Context) {
           .write();
         database.update("count", (count) => count + 1).write();
 
-        if (currentSocket) {
-          currentSocket.send(
-            preparePostsBeforeSend(database.get("posts").value())
-          );
-        }
-
+        server.clients.forEach((client) => {
+          if (client.readyState === ws.OPEN) {
+            client.send(preparePostsBeforeSend(database.get("posts").value()));
+          }
+        });
         await ctx.reply(SUCCESS);
       } catch (e) {
         console.error(`Database update failed: ${e}`);
@@ -140,9 +138,11 @@ function initBot() {
   botInstance.command("drop", async (ctx) => {
     if (isAdmin(ctx)) {
       database.setState({ posts: [], count: 0 }).write();
-      if (currentSocket) {
-        currentSocket.send(JSON.stringify([]));
-      }
+      server.clients.forEach((client) => {
+        if (client.readyState === ws.OPEN) {
+          client.send(JSON.stringify([]));
+        }
+      });
       ctx.reply("Посты очищены");
     }
   });
@@ -156,9 +156,11 @@ function initBot() {
         .remove((post) => post.from.includes(username))
         .value();
       const newPosts = database.get("posts").value();
-      if (currentSocket) {
-        currentSocket.send(preparePostsBeforeSend(newPosts));
-      }
+      server.clients.forEach((client) => {
+        if (client.readyState === ws.OPEN) {
+          client.send(preparePostsBeforeSend(newPosts));
+        }
+      });
       database.set("count", newPosts.length).write();
       ctx.reply(`Все посты пользователя ${username} удалены`);
     }
@@ -181,8 +183,6 @@ function initDatabase() {
 }
 
 server.on("connection", (socket) => {
-  currentSocket = socket;
-
   socket.on("message", (data) => {
     if (data === "get") {
       const posts = database

@@ -8,4 +8,5 @@ export interface Post {
 export interface Schema {
   posts: Post[];
   count: number;
+  bannedUsers: string[];
 }

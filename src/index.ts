@@ -46,7 +46,7 @@ async function handler(ctx: Context) {
   try {
     if (!ctx.message || !ctx.message.from?.id) return;
 
-    const timeToWait = await checkDelay(ctx.message.from.id);
+    const timeToWait = await checkDelay(ctx.message.from.id, ctx);
     if (timeToWait === null) throw new Error("Unable to check delay");
     if (timeToWait > 0) {
       await ctx.reply(getTimeToWaitMessage(timeToWait));
@@ -101,8 +101,9 @@ async function handler(ctx: Context) {
   }
 }
 
-async function checkDelay(userId: number) {
+async function checkDelay(userId: number, ctx: Context) {
   try {
+    if (isAdmin(ctx)) return 0;
     const posts: Post[] = database.get("posts").value();
     const postsByUser = posts.filter((post) => post.userId === userId);
     if (!postsByUser.length) return 0;

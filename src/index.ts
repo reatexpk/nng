@@ -46,6 +46,12 @@ async function handler(ctx: Context) {
   try {
     if (!ctx.message || !ctx.message.from?.id) return;
 
+    const bannedUsers = database.get("bannedUsers").value();
+    if (bannedUsers.includes(ctx.message.from.username || "")) {
+      ctx.reply("Ты был забанен :(");
+      return;
+    }
+
     const timeToWait = await checkDelay(ctx.message.from.id, ctx);
     if (timeToWait === null) throw new Error("Unable to check delay");
     if (timeToWait > 0) {
@@ -139,7 +145,7 @@ function initBot() {
 
   botInstance.command("drop", async (ctx) => {
     if (isAdmin(ctx)) {
-      database.setState({ posts: [], count: 0 }).write();
+      database.setState({ posts: [], count: 0, bannedUsers: [] }).write();
       if (currentSocket) {
         currentSocket.send(JSON.stringify([]));
       }
@@ -164,6 +170,37 @@ function initBot() {
     }
   });
 
+  botInstance.command("ban", (ctx) => {
+    if (!ctx.message?.text) return;
+    if (isAdmin(ctx)) {
+      const username = ctx.message.text.split(" ")[1];
+      database
+        .get("posts")
+        .remove((post) => post.from.includes(username))
+        .value();
+      const newPosts = database.get("posts").value();
+      if (currentSocket) {
+        currentSocket.send(preparePostsBeforeSend(newPosts));
+      }
+      database.set("count", newPosts.length).write();
+      const bannedUsers = database.get("bannedUsers").value();
+      database.set("bannedUsers", [...bannedUsers, username]);
+      ctx.reply(`Пользователь ${username} забанен`);
+    }
+  });
+
+  botInstance.command("unban", (ctx) => {
+    if (!ctx.message?.text) return;
+    if (isAdmin(ctx)) {
+      const username = ctx.message.text.split(" ")[1];
+      database
+        .get("bannedUsers")
+        .remove((user) => user)
+        .value();
+      ctx.reply(`Пользователь ${username} разбанен`);
+    }
+  });
+
   return botInstance;
 }
 
@@ -172,7 +209,7 @@ function initDatabase() {
     const location = path.resolve(__dirname, "../database.json");
     const adapter = new FileSync<Schema>(location);
     const databaseInstance = low(adapter);
-    databaseInstance.defaults({ posts: [], count: 0 }).write();
+    databaseInstance.defaults({ posts: [], count: 0, bannedUsers: [] }).write();
     return databaseInstance;
   } catch (e) {
     console.log("An error occured during initiating database");
